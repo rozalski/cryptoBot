@@ -42,6 +42,7 @@ class CriptoBotWorker {
             'entities' => $inputParams['message']['entities'], // это массив 
             'caption_entities' => $inputParams['message']['caption_entities'], // это массив 
             'new_member_id' => $inputParams['message']['new_chat_member']['id'],
+            'is_bot' => $inputParams['message']['new_chat_member']['is_bot'],
             //'entities_spam' => $inputParams['message']['entities'][0]['type'],
             'join_group' =>isset($inputParams['message']['new_chat_member'])?true:false
         ];
@@ -59,7 +60,6 @@ class CriptoBotWorker {
     }
 
     private function deleteMessage($chatID, $messageID) {
-
         file_get_contents(BotToken . "/deletemessage?chat_id=" . $chatID .
                 "&message_id=" . $messageID);
     }
@@ -67,7 +67,17 @@ class CriptoBotWorker {
         $blocktime = time()+86400; // мут новым пользователям на сутки
         file_get_contents(BotToken . "/restrictChatMember?chat_id=".$this->workinf['chatId'].
                 "&user_id=".$this->workinf['new_member_id']."&until_date=".$blocktime);
-        $this->writeLogDelMessage("restrict ".$this->workinf['new_member_id']." ".$this->workinf['chatId']);
+        $this->writeLogDelMessage("Бано новичка:  ".$this->workinf['new_member_id']." ".$this->workinf['chatId']."\n");
+    }
+     private function checkBots(){
+          
+       $this->writeLogDelMessage("[" . $this->getTime() . "] check bots".$this->workinf['is_bot'] . "\n");
+       if($this->workinf['is_bot']=="true"){
+             file_get_contents(BotToken . "/kickChatMember?chat_id=".$this->workinf['chatId'].
+                "&user_id=".$this->workinf['new_member_id']);
+        $this->writeLogDelMessage("Удалили бота id:  ".$this->workinf['new_member_id']." Из чата: ".$this->workinf['chatId'] . "\n");
+            //kick user
+       }
     }
     
     private function censoringMessage() { 
@@ -84,6 +94,7 @@ class CriptoBotWorker {
             $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
             $this->writeLogDelMessage("[" . $this->getTime() . "] " . "Новый пользователь\n");
             $this->restrictChatMember();
+            $this->checkBots();
             return;
         }
         

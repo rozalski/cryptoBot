@@ -4,6 +4,7 @@ define(CORE, "../../../coreBots/");
 require_once CORE . "criptoBotCore.php";
 require_once 'criptoBotBase.php';
 ini_set('date.timezone', 'Europe/Moscow');
+
 class CriptoBotWorker {
 
     private $deleteWords;
@@ -24,27 +25,39 @@ class CriptoBotWorker {
             'chatId' => $inputParams["message"]["chat"]["id"],
             'messageId' => $inputParams['message']['message_id'],
             'userId' => $inputParams['message']['from']['id'],
-            'command' => mb_strtolower($inputParams['message']["text"]),
+            'command' => mb_strtolower(isset($inputParams['message']["text"])?$inputParams['message']["text"]:NULL),
             'isSticker' => isset($inputParams['message']['sticker']) ? true : false,
             'timeMessage' => $inputParams["message"]["date"],
             'callback_query_message' => isset($inputParams['callback_query']['data']) ?
             $inputParams['callback_query']['data'] : NULL,
             'gif' => isset($inputParams['message']['document']['mime_type']) ?
             $inputParams['message']['document']['mime_type'] : NULL,
-            'callback_messageId' => $inputParams['callback_query']['message']['message_id'],
-            'callback_chatId' => $inputParams['callback_query']['message']['chat']['id'],
-            'message_caption' => $inputParams['message']['caption'],
-            'reply_to_messageId' => $inputParams['message']['reply_to_message']['message_id'],
-            'reply_to_from_fname' => $inputParams['message']['reply_to_message']['from']['first_name'],
-            'reply_to_from_lname' => $inputParams['message']['reply_to_message']['from']['last_name'],
-            'reply_to_text' => $inputParams['message']['reply_to_message']['text'],
-            'reply_to_from_userId' => $inputParams['message']['reply_to_message']['from']['id'],
-            'entities' => $inputParams['message']['entities'], // это массив 
-            'caption_entities' => $inputParams['message']['caption_entities'], // это массив 
-            'new_member_id' => $inputParams['message']['new_chat_member']['id'],
-            'is_bot' => $inputParams['message']['new_chat_member']['is_bot'],
+            'callback_messageId' => isset($inputParams['callback_query']['message']['message_id']) ?
+            $inputParams['callback_query']['message']['message_id'] : NULL,
+            'callback_chatId' => isset($inputParams['callback_query']['message']['chat']['id']) ?
+            $inputParams['callback_query']['message']['chat']['id'] : NULL,
+            'message_caption' => isset($inputParams['message']['caption'])?
+            $inputParams['message']['caption']:NULL,
+            'reply_to_messageId' => isset($inputParams['message']['reply_to_message']['message_id'])?
+            $inputParams['message']['reply_to_message']['message_id']:NULL,
+            'reply_to_from_fname' => isset($inputParams['message']['reply_to_message']['from']['first_name'])?
+            $inputParams['message']['reply_to_message']['from']['first_name']:NULL,
+            'reply_to_from_lname' => isset($inputParams['message']['reply_to_message']['from']['last_name'])?
+            $inputParams['message']['reply_to_message']['from']['last_name']:NULL,
+            'reply_to_text' => isset($inputParams['message']['reply_to_message']['text'])?
+            $inputParams['message']['reply_to_message']['text']:NULL,
+            'reply_to_from_userId' => isset($inputParams['message']['reply_to_message']['from']['id'])?
+            $inputParams['message']['reply_to_message']['from']['id']:NULL,
+            'entities' => isset($inputParams['message']['entities']) ?
+            $inputParams['message']['entities'] : NULL, // это массив 
+            'caption_entities' => isset($inputParams['message']['caption_entities']) ?
+            $inputParams['message']['caption_entities'] : NULL, // это массив 
+            'new_member_id' => isset($inputParams['message']['new_chat_member']['id'])?
+            $inputParams['message']['new_chat_member']['id']:NULL,
+            'is_bot' => isset($inputParams['message']['new_chat_member']['is_bot'])?
+            $inputParams['message']['new_chat_member']['is_bot']:NULL,
             //'entities_spam' => $inputParams['message']['entities'][0]['type'],
-            'join_group' =>isset($inputParams['message']['new_chat_member'])?true:false
+            'join_group' => isset($inputParams['message']['new_chat_member']) ? true : false
         ];
         $this->censoringMessage();
     }
@@ -63,66 +76,69 @@ class CriptoBotWorker {
         file_get_contents(BotToken . "/deletemessage?chat_id=" . $chatID .
                 "&message_id=" . $messageID);
     }
-    private function restrictChatMember(){
-        $blocktime = time()+86400; // мут новым пользователям на сутки
-        file_get_contents(BotToken . "/restrictChatMember?chat_id=".$this->workinf['chatId'].
-                "&user_id=".$this->workinf['new_member_id']."&until_date=".$blocktime);
-        $this->writeLogDelMessage("Бано новичка:  ".$this->workinf['new_member_id']." ".$this->workinf['chatId']."\n");
+
+    private function restrictChatMember() {
+        $blocktime = time() + 86400; // мут новым пользователям на сутки
+        file_get_contents(BotToken . "/restrictChatMember?chat_id=" . $this->workinf['chatId'] .
+                "&user_id=" . $this->workinf['new_member_id'] . "&until_date=" . $blocktime);
+        $this->writeLogDelMessage("Бано новичка:  " . $this->workinf['new_member_id'] . " " . $this->workinf['chatId'] . "\n");
     }
-     private function checkBots(){
-          
-       $this->writeLogDelMessage("[" . $this->getTime() . "] check bots".$this->workinf['is_bot'] . "\n");
-       if($this->workinf['is_bot']=="true"){
-             file_get_contents(BotToken . "/kickChatMember?chat_id=".$this->workinf['chatId'].
-                "&user_id=".$this->workinf['new_member_id']);
-        $this->writeLogDelMessage("Удалили бота id:  ".$this->workinf['new_member_id']." Из чата: ".$this->workinf['chatId'] . "\n");
+
+    private function checkBots() {
+
+        $this->writeLogDelMessage("[" . $this->getTime() . "] check bots" . $this->workinf['is_bot'] . "\n");
+        if ($this->workinf['is_bot'] == "true") {
+            file_get_contents(BotToken . "/kickChatMember?chat_id=" . $this->workinf['chatId'] .
+                    "&user_id=" . $this->workinf['new_member_id']);
+            $this->writeLogDelMessage("Удалили бота id:  " . $this->workinf['new_member_id'] . " Из чата: " . $this->workinf['chatId'] . "\n");
             //kick user
-       }
+        }
     }
-    
-    private function censoringMessage() { 
+
+    private function censoringMessage() {
 
         if ($this->workinf['command'] == "/start@mcrpadm18_bot" || $this->workinf['command'] == "/help@mcrpadm18_bot" ||
                 $this->workinf['command'] == "/stat@combot" || $this->workinf['command'] == "/getcur@mcrpadm18_bot") {
             $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
             $this->writeLogDelMessage("[" . $this->getTime() . "] " . $this->workinf['command'] . " : Удалена команда боту в чате.\n");
             return;
-            }elseif (in_array($this->workinf['userId'], $this->admins)) {
+        } elseif (in_array($this->workinf['userId'], $this->admins)) {
             return;
-        }
-        elseif($this->workinf['join_group']){
+        } elseif ($this->workinf['join_group']) {
             $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
             $this->writeLogDelMessage("[" . $this->getTime() . "] " . "Новый пользователь\n");
             $this->restrictChatMember();
             $this->checkBots();
             return;
         }
-        
-        
-        foreach($this->workinf['entities'] as $array){
-            foreach ($array as $key => $val){
-                if($key == "type" && ($val=="text_link" || $val == "url")){
-                   $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
-            $this->writeLogDelMessage("[" . $this->getTime() . "] " . $this->workinf['command'] . " : Удалена ссылка в entities\n");
-            return;
+
+        if ($this->workinf['entities'] != NULL) {
+            foreach ($this->workinf['entities'] as $array) {
+                foreach ($array as $key => $val) {
+                    if ($key == "type" && ($val == "text_link" || $val == "url")) {
+                        $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
+                        $this->writeLogDelMessage("[" . $this->getTime() . "] " . $this->workinf['command'] . " : Удалена ссылка в entities\n");
+                        return;
+                    }
                 }
             }
-        }      
-        foreach($this->workinf['caption_entities'] as $array){
-            foreach ($array as $key => $val){
-                if($key == "type" && ($val=="text_link" || $val == "url")){
-                   $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
-            $this->writeLogDelMessage("[" . $this->getTime() . "] " . $this->workinf['command'] . " : Удалена ссылка в caption_entities\n");     
-            return;
-            
+        }
+        if ($this->workinf['caption_entities'] != NULL) {
+            foreach ($this->workinf['caption_entities'] as $array) {
+                foreach ($array as $key => $val) {
+                    if ($key == "type" && ($val == "text_link" || $val == "url")) {
+                        $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
+                        $this->writeLogDelMessage("[" . $this->getTime() . "] " . $this->workinf['command'] . " : Удалена ссылка в caption_entities\n");
+                        return;
+                    }
                 }
             }
-        }    
+        }
 
         if ($this->workinf['gif'] != NULL && $this->workinf['gif'] == 'video/mp4') {
             $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
             $this->writeLogDelMessage("[" . $this->getTime() . "] " . $this->workinf['command'] . " : Анимация удалена\n");
-        
+
             return;
         }
         foreach ($this->deleteWords as $item) {
@@ -130,7 +146,6 @@ class CriptoBotWorker {
                 $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
                 $this->writeLogDelMessage("[" . $this->getTime() . "] " . $this->workinf['command'] . " : Сообщение содежрит мат\n");
                 return;
-                
             }
         }
         if ($this->workinf['isSticker'] == 1) {
@@ -145,9 +160,7 @@ class CriptoBotWorker {
             $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
             $this->writeLogDelMessage("[" . $this->getTime() . "] " . $this->workinf['command'] . " : Прошло менее 5 секунд. Прошло " . $bd->sec . "\n");
             return;
-            
         }
-        
     }
 
     private function writeLogDelMessage($logMessage) {

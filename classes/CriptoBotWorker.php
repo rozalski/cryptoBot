@@ -21,10 +21,10 @@ class CriptoBotWorker {
         $this->admins = include($admins);
         $this->workinf = [
             //'inputJSON' => $content,
-            'message' => $inputParams["message"],
-            'chatId' => $inputParams["message"]["chat"]["id"],
-            'messageId' => $inputParams['message']['message_id'],
-            'userId' => $inputParams['message']['from']['id'],
+            'message' => isset($inputParams["message"])?$inputParams["message"]:NULL,
+            'chatId' => isset($inputParams["message"]["chat"]["id"])?$inputParams["message"]["chat"]["id"]:NULL,
+            'messageId' => isset($inputParams['message']['message_id'])?$inputParams['message']['message_id']:NULL,
+            'userId' => isset($inputParams['message']['from']['id'])?$inputParams['message']['from']['id']:NULL,
             'command' => mb_strtolower(isset($inputParams['message']["text"])?$inputParams['message']["text"]:NULL),
             'isSticker' => isset($inputParams['message']['sticker']) ? true : false,
             'timeMessage' => $inputParams["message"]["date"],
@@ -81,7 +81,7 @@ class CriptoBotWorker {
         $blocktime = time() + 86400; // мут новым пользователям на сутки
         file_get_contents(BotToken . "/restrictChatMember?chat_id=" . $this->workinf['chatId'] .
                 "&user_id=" . $this->workinf['new_member_id'] . "&until_date=" . $blocktime);
-        $this->writeLogDelMessage("Бано новичка:  " . $this->workinf['new_member_id'] . " " . $this->workinf['chatId'] . "\n");
+        $this->writeLogDelMessage("Бан новичка:  " . $this->workinf['new_member_id'] . " " . $this->workinf['chatId'] . "\n");
     }
 
     private function checkBots() {

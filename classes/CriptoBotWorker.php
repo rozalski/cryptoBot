@@ -27,7 +27,7 @@ class CriptoBotWorker {
             'userId' => isset($inputParams['message']['from']['id'])?$inputParams['message']['from']['id']:NULL,
             'command' => mb_strtolower(isset($inputParams['message']["text"])?$inputParams['message']["text"]:NULL),
             'isSticker' => isset($inputParams['message']['sticker']) ? true : false,
-            'timeMessage' => $inputParams["message"]["date"],
+            'timeMessage' => isset($inputParams["message"]["date"])?$inputParams["message"]["date"]:NULL,
             'callback_query_message' => isset($inputParams['callback_query']['data']) ?
             $inputParams['callback_query']['data'] : NULL,
             'gif' => isset($inputParams['message']['document']['mime_type']) ?
@@ -59,9 +59,34 @@ class CriptoBotWorker {
             //'entities_spam' => $inputParams['message']['entities'][0]['type'],
             'join_group' => isset($inputParams['message']['new_chat_member']) ? true : false
         ];
+       
+       // 
         $this->censoringMessage();
+       // $this->removeKeyboard();
+//         $this->keyboardinit();
+    }
+    private function removeKeyboard(){
+       $removeKeyboard = json_encode([
+            'remove_keyboard' => true,
+        ]);      
+        $reply_markup = '&reply_markup='.$removeKeyboard;
+        $this->writeLogDelMessage(BotToken . "/sendmessage?chat_id=" .
+            $this->workinf['chatId'] . "&text=1".$reply_markup); 
+//         file_get_contents(BotToken . "/sendmessage?chat_id=" .
+//            $this->workinf['chatId'] . "&text=1&reply_markup=replykeyboardremove");       
     }
 
+    private function keyboardinit() {
+    $keyb = array('');    
+    $keyboard = array($keyb);
+    $resp = array("keyboard" => $keyboard, "resize_keyboard" => true, "one_time_keyboard" => true);
+    $reply = json_encode($resp);
+    file_get_contents(BotToken . "/sendmessage?chat_id=" .
+            $this->workinf['chatId'] . "&text=". urlencode('test')."&reply_markup=" . $reply);  
+//    $this->writeLogDelMessage(BotToken . "/sendmessage?chat_id=" .
+//            $this->workinf['chatId'] . "&text=". urlencode('test')."&reply_markup=" . $reply. "\n");
+    return;
+}
     public function sendMessage($message) {
         file_get_contents(BotToken . "/sendmessage?chat_id=" . $this->workinf['chatId'] .
                 "&text=" . urlencode($message));
@@ -150,7 +175,7 @@ class CriptoBotWorker {
         }
         if ($this->workinf['isSticker'] == 1) {
             $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
-            $this->writeLogDelMessage("Удален стикер\n");
+            $this->writeLogDelMessage($this->workinf['chatId']."Удален стикер\n");
             return;
         }
 

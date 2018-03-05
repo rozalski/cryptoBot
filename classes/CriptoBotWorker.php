@@ -57,7 +57,8 @@ class CriptoBotWorker {
             'is_bot' => isset($inputParams['message']['new_chat_member']['is_bot'])?
             $inputParams['message']['new_chat_member']['is_bot']:NULL,
             //'entities_spam' => $inputParams['message']['entities'][0]['type'],
-            'join_group' => isset($inputParams['message']['new_chat_member']) ? true : false
+            'join_group' => isset($inputParams['message']['new_chat_member']) ? true : false,
+            'from_chat' => isset($inputParams['message']['forward_from_chat']['id'])?true:false
         ];
        
        // 
@@ -165,6 +166,10 @@ class CriptoBotWorker {
             $this->writeLogDelMessage("Анимация удалена\n");
 
             return;
+        }
+        if($this->workinf['from_chat']){
+             $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
+            $this->writeLogDelMessage("Удален репост из другой группы.\n");
         }
         foreach ($this->deleteWords as $item) {
             if (preg_match("/$item/", $this->workinf['command'])) {

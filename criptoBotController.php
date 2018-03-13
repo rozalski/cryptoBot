@@ -8,7 +8,7 @@ $update = json_decode($content, TRUE);
 $CrBot = new CriptoBotWorker($update);
 
 
-if ($CrBot->workinf['command'] == "/start") { // @mcrpadm18_bot
+if ($CrBot->workinf['command'] == "/start") { 
     if ($CrBot->workinf['chatId'] < 0) {
         return;
     }  

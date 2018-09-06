@@ -1,5 +1,9 @@
 <?php
-
+/*"chat": {
+   "id": -1001226212743,
+   "title": "4traders.club BotTest",
+   "type": "supergroup"
+  },*/
 define(CORE, "../../../coreBots/");
 require_once CORE . "criptoBotCore.php";
 require_once 'criptoBotBase.php';
@@ -60,11 +64,21 @@ class CriptoBotWorker {
             'join_group' => isset($inputParams['message']['new_chat_member']) ? true : false,
             'from_chat' => isset($inputParams['message']['forward_from_chat']['id'])?true:false,
             'from_bot' => isset($inputParams['message']['forward_from']['is_bot'])?
-            $inputParams['message']['forward_from']['is_bot']:NULL
+            $inputParams['message']['forward_from']['is_bot']:NULL,
+            'chat_title' => isset($inputParams['message']['chat']['title']) ? $inputParams['message']['chat']['title'] : NULL
         ];
-
+        
         $this->censoringMessage();
 
+    }
+    private function sendServiceMSG($message){
+        $msg = "<b>[" . $this->getTime() . "]</b>\r\n<b>Группа: </b>" . $this->workinf['chat_title'] . "\r\n" .
+                "<b>Действие: </b>" . $message . "\r\n" .
+                "<b>Сообщение: </b>" . $this->workinf['message']['text'] . "\r\n"
+                
+                ;
+         file_get_contents(BotToken . "/sendmessage?chat_id=-1001226212743&text=" . urlencode($msg) . "&parse_mode=html");
+        return;
     }
     private function removeKeyboard(){
        $removeKeyboard = json_encode([
@@ -104,7 +118,8 @@ class CriptoBotWorker {
         $blocktime = time() + 86400; // мут новым пользователям на сутки
         file_get_contents(BotToken . "/restrictChatMember?chat_id=" . $this->workinf['chatId'] .
                 "&user_id=" . $this->workinf['new_member_id'] . "&until_date=" . $blocktime);
-        $this->writeLogDelMessage("Бан новичка:  " . $this->workinf['new_member_id'] . " " . $this->workinf['chatId'] . "\n");
+        //$this->writeLogDelMessage("Бан новичка:  " . $this->workinf['new_member_id'] . " " . $this->workinf['chatId'] . "\n");
+        $this->sendServiceMSG("Сутки новичку!");
     }
 
     private function checkBots() {
@@ -114,7 +129,8 @@ class CriptoBotWorker {
             file_get_contents(BotToken . "/kickChatMember?chat_id=" . $this->workinf['chatId'] .
                     "&user_id=" . $this->workinf['new_member_id']);
             $this->writeLogDelMessage("Удалили бота id:  " . $this->workinf['new_member_id'] . " Из чата: " . $this->workinf['chatId'] . "\n");
-            //kick user
+            $this->sendServiceMSG("Удалил бота");
+//kick user
         }
     }
 
@@ -123,13 +139,15 @@ class CriptoBotWorker {
         if ($this->workinf['command'] == "/start@mcrpadm18_bot" || $this->workinf['command'] == "/help@mcrpadm18_bot" ||
                 $this->workinf['command'] == "/stat@combot" || $this->workinf['command'] == "/getcur@mcrpadm18_bot") {
             $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
-            $this->writeLogDelMessage($this->workinf['command'] . " : Удалена команда боту в чате.\n");
+            //$this->writeLogDelMessage($this->workinf['command'] . " : Удалена команда боту в чате.\n");
+            $this->sendServiceMSG("Удалена команда боту!");
             return;
         } elseif (in_array($this->workinf['userId'], $this->admins)) {
             return;
         } elseif ($this->workinf['join_group']) {
             $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
-            $this->writeLogDelMessage("Новый пользователь. Удалено сервисное сообщение.\n");
+            //$this->writeLogDelMessage("Новый пользователь. Удалено сервисное сообщение.\n");
+            $this->sendServiceMSG("Новый пользователь. Удалено сервисное сообщение.");
             $this->restrictChatMember();
             $this->checkBots();
             return;
@@ -140,7 +158,8 @@ class CriptoBotWorker {
                 foreach ($array as $key => $val) {
                     if ($key == "type" && ($val == "text_link" || $val == "url")) {
                         $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
-                        $this->writeLogDelMessage($this->workinf['command'] . " : Удалена ссылка в entities\n");
+                       // $this->writeLogDelMessage($this->workinf['command'] . " : Удалена ссылка в entities\n");
+                        $this->sendServiceMSG("Удалена ссылка");
                         return;
                     }
                 }
@@ -151,7 +170,8 @@ class CriptoBotWorker {
                 foreach ($array as $key => $val) {
                     if ($key == "type" && ($val == "text_link" || $val == "url")) {
                         $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
-                        $this->writeLogDelMessage($this->workinf['command'] . " : Удалена ссылка в caption_entities\n");
+                        //$this->writeLogDelMessage($this->workinf['command'] . " : Удалена ссылка в caption_entities\n");
+                        $this->sendServiceMSG("Удалена ссылка");
                         return;
                     }
                 }
@@ -160,28 +180,33 @@ class CriptoBotWorker {
 
         if ($this->workinf['gif'] != NULL && $this->workinf['gif'] == 'video/mp4') {
             $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
-            $this->writeLogDelMessage("Анимация удалена\n");
+            //$this->writeLogDelMessage("Анимация удалена\n");
+            $this->sendServiceMSG("Удалена анимация");
 
             return;
         }
         if($this->workinf['from_chat']){
              $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
-            $this->writeLogDelMessage("Удален репост из другой группы.\n");
+            //$this->writeLogDelMessage("Удален репост из другой группы.\n");
+             $this->sendServiceMSG("Репост из другой группы.");
         }
          if($this->workinf['from_bot']=='true'){
              $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
-            $this->writeLogDelMessage("Удален репост от бота.\n");
+            //$this->writeLogDelMessage("Удален репост от бота.\n");
+             $this->sendServiceMSG("Репост от бота.");
         }
         foreach ($this->deleteWords as $item) {
             if (preg_match("/$item/", $this->workinf['command'])) {
                 $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
-                $this->writeLogDelMessage($this->workinf['command'] . " : Сообщение содежрит мат\n");
+                //$this->writeLogDelMessage($this->workinf['command'] . " : Сообщение содежрит мат\n");
+                $this->sendServiceMSG("Вероятно сообщение содержит мат.");
                 return;
             }
         }
         if ($this->workinf['isSticker'] == 1) {
             $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
-            $this->writeLogDelMessage($this->workinf['chatId']."Удален стикер\n");
+            //$this->writeLogDelMessage($this->workinf['chatId']."Удален стикер\n");
+            $this->sendServiceMSG("Удален стикер.");
             return;
         }
 
@@ -189,7 +214,8 @@ class CriptoBotWorker {
         $bd = new CryptoBotBase($this->workinf['userId'], $this->workinf['timeMessage']);
         if ($bd->checkLastMessageTime()) {
             $this->deleteMessage($this->workinf['chatId'], $this->workinf['messageId']);
-            $this->writeLogDelMessage( $this->workinf['command'] . " : Прошло менее 5 секунд. Прошло " . $bd->sec . "\n");
+            //$this->writeLogDelMessage( $this->workinf['command'] . " : Прошло менее 5 секунд. Прошло " . $bd->sec . "\n");
+            $this->sendServiceMSG("Флуд! Прошло менее 5 секунд. Прошло: " . $bd->sec . " секунд.");
             return;
         }
     }
